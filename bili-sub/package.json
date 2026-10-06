@@ -1,6 +1,6 @@
 {
   "name": "bili-sub",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "下载 B 站视频字幕（CC/AI 字幕，支持扫码登录），输出纯文本 / SRT / JSON",
   "keywords": [
     "bilibili",
