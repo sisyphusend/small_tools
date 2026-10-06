@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces",
+    "typecheck": "npm run typecheck --workspaces",
     "bili": "node bili-sub/dist/cli.js",
     "xyz": "node xyz-text/dist/cli.js"
   },

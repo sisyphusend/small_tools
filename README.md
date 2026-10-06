@@ -80,6 +80,20 @@ npm publish -w xyz-text --registry https://registry.npmjs.org
 # 发布后任何人：npm i -g bili-sub 或免安装 npx bili-sub <url>
 ```
 
+## 发布（CI/CD）
+
+推送到 main 自动跑构建 + 类型检查（CI）。发布走 tag 触发（GitHub Actions 自动发布到 npm 并创建对应包的 Release，附带 tgz）：
+
+```bash
+# 以发布 bili-sub 0.2.0 为例（先确认 bili-sub/package.json 的 version 是 0.2.0）
+git tag bili-sub-v0.2.0
+git push origin bili-sub-v0.2.0
+
+# xyz-text 同理：xyz-text-v0.2.0
+```
+
+两个包独立版本、独立发布、独立 Release。首次使用前需在仓库 Secrets 里配置 `NPM_TOKEN`（npmjs.com → Access Tokens → Generate New Token → 类型选 Automation，然后 `gh secret set NPM_TOKEN -R sisyphusend/small_tools`）。
+
 ## License
 
 MIT
