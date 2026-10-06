@@ -1,0 +1,37 @@
+{
+  "name": "xyz-text",
+  "version": "0.2.0",
+  "description": "抓取小宇宙播客单集文本：Shownotes + 官方 AI 文稿（扫码登录），输出 Markdown",
+  "keywords": [
+    "xiaoyuzhou",
+    "podcast",
+    "transcript",
+    "cli",
+    "小宇宙",
+    "播客"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sisyphusend/small_tools.git",
+    "directory": "xyz-text"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "xyz-text": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "esbuild src/cli.ts --bundle --platform=node --format=cjs --target=node20 --outfile=dist/cli.js --banner:js='#!/usr/bin/env node' && chmod +x dist/cli.js",
+    "prepack": "npm run build",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "qrcode-terminal": "^0.12.0"
+  }
+}

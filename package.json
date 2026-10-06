@@ -1,0 +1,20 @@
+{
+  "name": "small-tools",
+  "version": "0.1.0",
+  "private": true,
+  "description": "个人小工具集：B站字幕抓取、小宇宙文本抓取",
+  "workspaces": [
+    "bili-sub",
+    "xyz-text"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "bili": "node bili-sub/dist/cli.js",
+    "xyz": "node xyz-text/dist/cli.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.7.0"
+  }
+}
