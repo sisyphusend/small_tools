@@ -39,7 +39,7 @@ jobs:
         run: |
           pkg="${{ steps.pkg.outputs.package }}"
           tag_ver="${GITHUB_REF_NAME#*-v}"
-          pkg_ver="$(node -p "require('./' + pkg + '/package.json').version")"
+          pkg_ver="$(node -p "require('./' + process.argv[1] + '/package.json').version" "$pkg")"
           if [ "$tag_ver" != "$pkg_ver" ]; then
             echo "tag 版本 $tag_ver 与 $pkg@$pkg_ver 不一致，请先更新 package.json"
             exit 1
