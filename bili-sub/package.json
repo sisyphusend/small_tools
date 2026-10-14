@@ -1,6 +1,6 @@
 {
   "name": "bili-sub",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "下载 B 站视频字幕（CC/AI 字幕，支持扫码登录），输出纯文本 / SRT / JSON",
   "keywords": [
     "bilibili",
@@ -25,11 +25,16 @@
     "LICENSE"
   ],
   "scripts": {
+    "dev": "node src/cli.ts",
     "build": "esbuild src/cli.ts --bundle --platform=node --format=cjs --target=node20 --outfile=dist/cli.js --banner:js='#!/usr/bin/env node' && chmod +x dist/cli.js",
     "prepack": "npm run build",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/"
   },
   "devDependencies": {
-    "qrcode-terminal": "^0.12.0"
+    "@types/node": "^22.10.0",
+    "esbuild": "^0.24.0",
+    "qrcode-terminal": "^0.12.0",
+    "typescript": "^5.7.0"
   }
 }
