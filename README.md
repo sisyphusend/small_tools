@@ -1,6 +1,6 @@
 # small_tools
 
-个人小工具集。两个独立的命令行工具,均为 TypeScript + esbuild 单文件打包,零运行时依赖(Node 20+):
+个人小工具集。各目录**完全独立**、互不关联（不同工具甚至可以用不同技术栈，如 Python），以下为当前工具：
 
 | 目录 | 工具 | 功能 |
 |---|---|---|
@@ -15,17 +15,21 @@ npm i -g bili-sub xyz-text
 
 ## 本地开发
 
+每个工具独立安装、独立构建（在各自目录内操作）:
+
 ```bash
+cd bili-sub   # 或 xyz-text
 npm install
-npm run build             # 构建两个工具到各自 dist/cli.js
+npm run build
 npm run typecheck
-npm run bili -- <url>     # 不全局安装的直接用法;xyz 同理 npm run xyz -- <url>
+npm test      # 仅 bili-sub 有端到端测试
+node dist/cli.js --help
 ```
 
 ## 打包
 
 ```bash
-npm pack -w bili-sub -w xyz-text   # 产出 tgz,可直接 npm i -g 安装
+cd bili-sub && npm pack   # 产出 bili-sub-x.y.z.tgz,可直接 npm i -g 安装;xyz-text 同理
 ```
 
 ## 发布(CI/CD)

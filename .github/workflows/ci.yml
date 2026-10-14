@@ -8,11 +8,20 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: [bili-sub, xyz-text]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: npm ci
+        working-directory: ${{ matrix.package }}
+      - run: npm run typecheck
+        working-directory: ${{ matrix.package }}
       - run: npm run build
-      - run: npm run typecheck --workspaces
+        working-directory: ${{ matrix.package }}
+      # 端到端测试: 需要登录凭证的用例在 CI 里自动跳过
+      - run: npm test
+        working-directory: ${{ matrix.package }}

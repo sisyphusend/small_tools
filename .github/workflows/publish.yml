@@ -32,8 +32,11 @@ jobs:
           esac
 
       - run: npm ci
-      - run: npm run build -w ${{ steps.pkg.outputs.package }}
-      - run: npm run typecheck -w ${{ steps.pkg.outputs.package }}
+        working-directory: ${{ steps.pkg.outputs.package }}
+      - run: npm run typecheck
+        working-directory: ${{ steps.pkg.outputs.package }}
+      - run: npm run build
+        working-directory: ${{ steps.pkg.outputs.package }}
 
       - name: 校验 tag 与包版本一致
         run: |
@@ -46,16 +49,18 @@ jobs:
           fi
 
       - name: npm pack
-        run: npm pack -w ${{ steps.pkg.outputs.package }}
+        run: npm pack
+        working-directory: ${{ steps.pkg.outputs.package }}
 
       - name: 发布到 npm
-        run: npm publish ./${{ steps.pkg.outputs.package }} --access public
+        run: npm publish --access public
+        working-directory: ${{ steps.pkg.outputs.package }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: 创建 GitHub Release 并附带 tgz
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ steps.pkg.outputs.package }}-*.tgz
+          files: ${{ steps.pkg.outputs.package }}/*.tgz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
