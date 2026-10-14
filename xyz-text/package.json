@@ -1,6 +1,6 @@
 {
   "name": "xyz-text",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "抓取小宇宙播客单集文本：Shownotes + 官方 AI 文稿（扫码登录），输出 Markdown",
   "keywords": [
     "xiaoyuzhou",
@@ -27,11 +27,16 @@
     "LICENSE"
   ],
   "scripts": {
+    "dev": "node src/cli.ts",
     "build": "esbuild src/cli.ts --bundle --platform=node --format=cjs --target=node20 --outfile=dist/cli.js --banner:js='#!/usr/bin/env node' && chmod +x dist/cli.js",
     "prepack": "npm run build",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/"
   },
   "devDependencies": {
-    "qrcode-terminal": "^0.12.0"
+    "@types/node": "^22.10.0",
+    "esbuild": "^0.24.0",
+    "qrcode-terminal": "^0.12.0",
+    "typescript": "^5.7.0"
   }
 }

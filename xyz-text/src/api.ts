@@ -1,9 +1,9 @@
-import { mkdirSync, writeFileSync, readFileSync, chmodSync } from "node:fs";
+import { mkdirSync, writeFileSync, readFileSync, chmodSync, renameSync, copyFileSync, rmSync, existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import qrcode from "qrcode-terminal";
-import type { Episode } from "./xiaoyuzhou";
+import type { Episode } from "./xiaoyuzhou.ts";
 
 const API_BASE = "https://api.xiaoyuzhoufm.com";
 const WEB_API_BASE = "https://web-api.xiaoyuzhoufm.com";
@@ -19,7 +19,14 @@ const BROWSER_HEADERS = {
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36",
   "x-midway-app-id": MIDWAY_APP_ID,
 };
-const TOKEN_FILE = join(homedir(), ".config", "small_tools", "xyz.json");
+const CONFIG_DIR = join(homedir(), ".xyz-text");
+const TOKEN_FILE = join(CONFIG_DIR, "credentials.json");
+// 旧版凭证位置，首次读取时自动迁移到 ~/.xyz-text/
+const LEGACY_TOKEN_FILE = join(homedir(), ".config", "small_tools", "xyz.json");
+
+function info(msg: string) {
+  process.stderr.write(msg + "\n"); // 登录提示走 stderr，不污染 stdout
+}
 
 export class XyzApiError extends Error {
   hint?: string;
@@ -38,7 +45,27 @@ export interface Creds {
   savedAt: string;
 }
 
+/** 旧版本把凭证存在 ~/.config/small_tools/，首次使用时迁移过来 */
+function migrateLegacyToken(): void {
+  if (existsSync(TOKEN_FILE) || !existsSync(LEGACY_TOKEN_FILE)) return;
+  try {
+    mkdirSync(CONFIG_DIR, { recursive: true });
+    renameSync(LEGACY_TOKEN_FILE, TOKEN_FILE);
+    info(`已把旧凭证迁移到 ${TOKEN_FILE}`);
+    return;
+  } catch {
+    /* rename 失败（如跨设备）退回复制 */
+  }
+  try {
+    copyFileSync(LEGACY_TOKEN_FILE, TOKEN_FILE);
+    info(`已把旧凭证迁移到 ${TOKEN_FILE}`);
+  } catch {
+    /* 迁移失败按无凭证处理，登录时会重新生成 */
+  }
+}
+
 export function loadCreds(): Creds | null {
+  migrateLegacyToken();
   try {
     return JSON.parse(readFileSync(TOKEN_FILE, "utf-8")) as Creds;
   } catch {
@@ -46,8 +73,22 @@ export function loadCreds(): Creds | null {
   }
 }
 
+/** 清除本地凭证（含旧版位置，避免迁移机制把它带回来），返回被删除的文件 */
+export function clearCreds(): string[] {
+  const removed: string[] = [];
+  for (const file of [TOKEN_FILE, LEGACY_TOKEN_FILE]) {
+    try {
+      rmSync(file);
+      removed.push(file);
+    } catch {
+      /* 文件不存在等情况忽略 */
+    }
+  }
+  return removed;
+}
+
 function saveCreds(creds: Creds) {
-  mkdirSync(join(TOKEN_FILE, ".."), { recursive: true });
+  mkdirSync(CONFIG_DIR, { recursive: true });
   writeFileSync(TOKEN_FILE, JSON.stringify(creds, null, 2), { mode: 0o600 });
   try {
     chmodSync(TOKEN_FILE, 0o600);
@@ -100,6 +141,11 @@ function sleep(ms: number) {
 
 /** 扫码登录：小宇宙 App 扫码确认后拿到 token 并存本地。二维码过期自动换新 */
 export async function qrLogin(totalTimeoutSec = 300): Promise<Creds> {
+  if (!process.stderr.isTTY) {
+    throw new XyzApiError(
+      "当前不是交互式终端，无法扫码登录。请先在终端运行: xyz-text --login",
+    );
+  }
   const deadline = Date.now() + totalTimeoutSec * 1000;
   let attempt = 0;
 
@@ -118,13 +164,15 @@ export async function qrLogin(totalTimeoutSec = 300): Promise<Creds> {
       throw new XyzApiError("创建二维码响应异常");
     }
 
-    console.log(
+    info(
       attempt > 1
         ? `\n二维码已过期，已自动换新（第 ${attempt} 张），请重新扫码：`
         : "请用小宇宙 App 扫描下面的二维码（App「我的」页右上角扫一扫），扫完尽快在手机上确认：\n",
     );
-    qrcode.generate(created.url, { small: true });
-    console.log("");
+    // 二维码走 stderr，stdout 保持纯文稿内容，可安全重定向
+    qrcode.generate(created.url, { small: true }, (qr) =>
+      process.stderr.write(qr + "\n"),
+    );
 
     let notified = false;
     // 单张二维码最长等 3 分钟，过期/确认成功都跳出
@@ -145,7 +193,7 @@ export async function qrLogin(totalTimeoutSec = 300): Promise<Creds> {
       const body = (await res.json()) as { status?: string };
       if (body.status === "SCANNED") {
         if (!notified) {
-          console.log("已扫码，请在手机上点击确认…");
+          info("已扫码，请在手机上点击确认…");
           notified = true;
         }
         continue;
@@ -160,15 +208,15 @@ export async function qrLogin(totalTimeoutSec = 300): Promise<Creds> {
           );
         }
         saveCreds(creds);
-        console.log(
-          `登录成功，token 已保存到 ${TOKEN_FILE}（仅本机可读），之后自动抓取官方文稿。`,
+        info(
+          `登录成功！凭证已保存到 ${TOKEN_FILE}（权限 600，仅本机可读），之后自动抓取官方文稿。`,
         );
         return creds;
       }
       // WAITTING 继续等
     }
   }
-  throw new XyzApiError("等待扫码超时，请重新运行 login");
+  throw new XyzApiError("等待扫码超时，请重新运行 --login");
 }
 
 /** 从轮询响应的普通响应头和 Set-Cookie 里提取 token */
@@ -236,7 +284,7 @@ async function apiPost(
     if (!(await refreshCreds(creds))) {
       throw new XyzApiError(
         "登录态已过期",
-        "请重新运行 xyz-text login 登录",
+        "请重新运行 xyz-text --login 登录",
       );
     }
     res = await fetch(`${API_BASE}${path}`, {
